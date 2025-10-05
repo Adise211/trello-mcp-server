@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      name="stytch-token"
+      content="public-token-test-e79921c5-4d83-47c8-97f2-a8dbe12a27d9"
+    />
+    <script type="importmap">
+      {
+        "imports": {
+          "@stytch/vanilla-js": "https://www.unpkg.com/@stytch/vanilla-js@5.32/dist/index.esm.js"
+        }
+      }
+    </script>
+    <title>Document</title>
+  </head>
+  <body>
+    <div id="stytch-sdk-login"></div>
+    <div id="login-loader"></div>
+    <!-- <script src="https://unpkg.com/@stytch/vanilla-js@latest"></script> -->
+    <script type="module">
+      import { StytchUIClient } from "@stytch/vanilla-js";
+
+      // Get the Stytch token from the meta tag
+      const getStytchToken = () => {
+        const metaToken = document.querySelector('meta[name="stytch-token"]');
+        if (metaToken) {
+          return metaToken.getAttribute("content") || "";
+        }
+        throw new Error("Stytch public token not found");
+      };
+
+      const stytch = new StytchUIClient(getStytchToken());
+
+      // Handle the login complete event
+      const onLoginComplete = (path) => {
+        const returnTo = localStorage.getItem("returnTo");
+        if (returnTo) {
+          window.location.href = returnTo;
+        } else {
+          // TODO: Change to the correct page
+          window.location.href = path;
+        }
+      };
+
+      // Mount the Login
+      const login = () => {
+        const handleOnLoginComplete = (evt) => {
+          if (evt.type !== "AUTHENTICATE_FLOW_COMPLETE") return;
+          onLoginComplete("/oauth/authorize");
+        };
+
+        const loginCallbacks = {
+          onEvent: (evt) => {
+            handleOnLoginComplete(evt);
+          },
+          onError: (data) => {
+            console.log(data);
+          },
+        };
+
+        const loginConfig = {
+          products: ["oauth", "otp"],
+          oauthOptions: {
+            providers: [
+              {
+                type: "google",
+                one_tap: true,
+                position: "floating",
+                cancel_on_tap_outside: false,
+                loginRedirectURL: window.location.origin + "/authenticate",
+                signupRedirectURL: window.location.origin + "/authenticate",
+              },
+            ],
+          },
+          otpOptions: {
+            expirationMinutes: 10,
+            methods: ["email"],
+          },
+        };
+
+        // Customize the text in the prebuilt UI via the `strings` parameter
+        const strings = {
+          "login.title": "Welcome back TO Trello MCP Server!",
+        };
+
+        stytch.mountLogin({
+          elementId: "#stytch-sdk-login",
+          styles: { fontFamily: "Arial" },
+          callbacks: loginCallbacks,
+          config: loginConfig,
+          strings,
+        });
+      };
+
+      login();
+    </script>
+  </body>
+</html>
