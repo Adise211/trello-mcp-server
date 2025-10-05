@@ -2,6 +2,7 @@ import { Router, Request, Response, response } from "express";
 import { authorizeTokenMiddleware } from "./middleware";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { handlePostRequest, handleSessionRequest } from "./mcp.controller";
 
 const router = Router();
 
@@ -17,7 +18,7 @@ router.get("/health", (req: Request, res: Response) => {
 
 // MCP endpoint - POST request
 router.post(
-  "/mcp",
+  "/mcp/me",
   authorizeTokenMiddleware,
   async (req: Request, res: Response) => {
     console.log(
@@ -59,5 +60,8 @@ router.post(
     }
   }
 );
+router.post("/mcp", authorizeTokenMiddleware, handlePostRequest);
+router.get("/mcp", authorizeTokenMiddleware, handleSessionRequest);
+router.delete("/mcp", authorizeTokenMiddleware, handleSessionRequest);
 
 export default router;

@@ -1,62 +1,19 @@
 import { NextFunction, Request, Response } from "express";
-import { stytchClient } from "./mcp-config";
+import stytch from "stytch";
 
-// export async function authenticateUser(
-//   req: Request,
-//   res: Response,
-//   next: NextFunction
-// ) {
-//   try {
-//     const authHeader = req.headers["authorization"];
-//     console.log("In authenticateUser - authHeader: ", authHeader);
-//     if (!authHeader) {
-//       console.log("No credentials → 401 with WWW-Authenticate");
-//       // No credentials → 401 with WWW-Authenticate
-//       res
-//         .status(401)
-//         .set(
-//           "WWW-Authenticate",
-//           `Bearer realm="https://${process.env.APP_DOMAIN}/.well-known/oauth-protected-resource", error="invalid_token"`
-//         )
-//         .json(createErrorResponse("Unauthorized", -32000));
-//     }
+export const stytchClient = new stytch.Client({
+  project_id: process.env.STYTCH_PROJECT_ID as string,
+  secret: process.env.STYTCH_SECRET as string,
+  custom_base_url: process.env.STYTCH_DOMAIN as string,
+});
 
-//     // Example: "Bearer <token>"
-//     const token = authHeader?.split(" ")[1];
-//     console.log("In authenticateUser - token: ", token);
-
-//     // TODO: Verify with Stytch (check access_token/session)
-//     const isValid = await stytchClient.oauth.authenticate({
-//       token: token as string,
-//     });
-//     console.log("In authenticateUser - isValid: ", isValid);
-
-//     if (!isValid) {
-//       res
-//         .status(401)
-//         .set(
-//           "WWW-Authenticate",
-//           `Bearer realm="https://${process.env.APP_DOMAIN}/.well-known/oauth-protected-resource", error="invalid_token"`
-//         )
-//         .json(createErrorResponse("Invalid or expired token", -32000));
-//     }
-//     console.log("In authenticateUser - next()");
-
-//     next();
-//   } catch (error) {
-//     console.error("Error in authenticateUser: ", error);
-//   }
-// }
-// @ts-ignore
 export const authorizeTokenMiddleware = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  console.log(
-    "In authorizeTokenMiddleware, req.get('authorization')",
-    req.get("authorization")
-  );
+  console.log("In authorizeTokenMiddleware.....");
+
   const wwwAuthValue =
     `Bearer error="Unauthorized", ` +
     `error_description="Unauthorized",` +
@@ -68,7 +25,6 @@ export const authorizeTokenMiddleware = async (
     const token =
       req.headers.authorization && req.headers.authorization.split(" ")[1];
 
-    console.log("In authorizeTokenMiddleware, token", token);
     if (!token) {
       console.log("In authorizeTokenMiddleware, token is not found!!!!!!");
       res.setHeader("WWW-Authenticate", wwwAuthValue);

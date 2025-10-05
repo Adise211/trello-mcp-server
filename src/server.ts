@@ -1,8 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { allTools } from "./tools/index.js";
-import { logger } from "./utils/logger.js";
+import { allTools } from "./tools/index";
+import { logger } from "./utils/logger";
 
 // Create an MCP server
 const server = new McpServer({

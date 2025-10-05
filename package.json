@@ -1,7 +1,7 @@
 {
   "name": "trello-mcp-server",
   "version": "1.0.0",
-  "description": "A Node.js + TypeScript project",
+  "description": "Trello MCP Server",
   "type": "commonjs",
   "main": "dist/index.js",
   "scripts": {
