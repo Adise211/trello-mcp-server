@@ -20,7 +20,7 @@ import cors from "cors";
 import path from "node:path";
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = parseInt(process.env.PORT || "3000", 10);
 console.log("Remote server is starting...");
 console.log(`Environment: ${process.env.NODE_ENV}`);
 
@@ -62,8 +62,12 @@ const sessionConfig = {
     maxAge: 60000,
     httpOnly: true, // Prevent XSS access
     secure: process.env.NODE_ENV === "production", // HTTPS only in production
-    sameSite: "strict" as const, // CSRF protection
+    sameSite:
+      process.env.NODE_ENV === "production"
+        ? ("none" as const)
+        : ("strict" as const), // Allow cross-site cookies in production for OAuth
   },
+  proxy: process.env.NODE_ENV === "production", // Trust the reverse proxy (Railway)
 };
 
 // Rate limiting config
@@ -97,25 +101,40 @@ app.use((req, res, next) => {
 });
 
 app.use(session(sessionConfig));
+// Trust Railway's proxy
+app.set("trust proxy", 1);
+
 app.use(express.json()); // Enable parsing of JSON request bodies from raw stream
 app.use(helmet(helmetConfig)); // Helmet is a middleware that helps secure the app (security headers) by setting various HTTP headers
 app.use(limiter); // Apply rate limiting to all routes
 app.use(cookieParser()); // Parse cookies from the request
 // HTTPS Enforcement in Production
 if (process.env.NODE_ENV === "production") {
-  // Redirect users to HTTPS in production
+  // Redirect users to HTTPS in production (Railway terminates SSL at proxy level)
   app.use((req, res, next) => {
-    if (!req.secure) {
+    // Skip redirect for health check
+    if (req.path === "/health") {
+      return next();
+    }
+    // Check x-forwarded-proto header set by Railway's proxy
+    if (req.headers["x-forwarded-proto"] !== "https") {
       return res.redirect(301, `https://${req.headers.host}${req.url}`);
     }
     next();
   });
 }
 
+// Health check endpoint for Railway
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
 app.use("/", router);
 app.use("/", authRouter);
 
-app.listen(port, () => {
-  console.log(`🚀 Server is running on port ${port}`);
+// Bind to 0.0.0.0 for Railway deployment
+const host = process.env.HOST || "0.0.0.0";
+app.listen(port, host, () => {
+  console.log(`🚀 Server is running on ${host}:${port}`);
   console.log(`📡 API endpoints available at http://localhost:${port}`);
 });

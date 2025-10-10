@@ -13,9 +13,9 @@ router.get("/", (req: Request, res: Response) => {
 });
 
 // Health check
-router.get("/health", (req: Request, res: Response) => {
-  res.status(200).send("OK");
-});
+// router.get("/health", (req: Request, res: Response) => {
+//   res.status(200).send("OK");
+// });
 
 // MCP endpoint - POST request
 router.post(
