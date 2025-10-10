@@ -30,7 +30,14 @@ app.set("views", path.join(__dirname, "views"));
 
 // CORS config
 const corsConfig = {
-  origin: ["http://localhost:6274"],
+  // Allow all origins (Auth is handled by Stytch)
+  origin: (
+    origin: string | undefined,
+    callback: (err: Error | null, allow?: boolean) => void
+  ) => {
+    // Allow all origins
+    callback(null, true);
+  },
   credentials: true, // Allow cookies (important)
   exposedHeaders: ["Mcp-Session-Id"],
   allowedHeaders: [
@@ -42,11 +49,21 @@ const corsConfig = {
 };
 
 // Express session management
+const sessionSecret = process.env.SESSION_SIGNING_SECRET as string;
+if (!sessionSecret) {
+  throw new Error("SESSION_SIGNING_SECRET environment variable is required");
+}
+
 const sessionConfig = {
   resave: true,
   saveUninitialized: false,
-  secret: process.env.SESSION_SIGNING_SECRET as string,
-  cookie: { maxAge: 60000 },
+  secret: sessionSecret,
+  cookie: {
+    maxAge: 60000,
+    httpOnly: true, // Prevent XSS access
+    secure: process.env.NODE_ENV === "production", // HTTPS only in production
+    sameSite: "strict" as const, // CSRF protection
+  },
 };
 
 // Rate limiting config
@@ -72,12 +89,28 @@ const helmetConfig = {
   },
 };
 
-app.use(cors(corsConfig));
+app.use((req, res, next) => {
+  if (req.path === "/.well-known/oauth-protected-resource") {
+    return next(); // Skip CORS for this route, it has its own CORS config
+  }
+  cors(corsConfig)(req, res, next);
+});
+
 app.use(session(sessionConfig));
 app.use(express.json()); // Enable parsing of JSON request bodies from raw stream
 app.use(helmet(helmetConfig)); // Helmet is a middleware that helps secure the app (security headers) by setting various HTTP headers
 app.use(limiter); // Apply rate limiting to all routes
 app.use(cookieParser()); // Parse cookies from the request
+// HTTPS Enforcement in Production
+if (process.env.NODE_ENV === "production") {
+  // Redirect users to HTTPS in production
+  app.use((req, res, next) => {
+    if (!req.secure) {
+      return res.redirect(301, `https://${req.headers.host}${req.url}`);
+    }
+    next();
+  });
+}
 
 app.use("/", router);
 app.use("/", authRouter);

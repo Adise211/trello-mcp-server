@@ -6,6 +6,7 @@ import {
   JSONRPCError,
 } from "@modelcontextprotocol/sdk/types.js";
 import { startRemoteServer } from "../server";
+import { logger } from "../utils/logger";
 
 // Map to store transports by session ID
 const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
@@ -15,18 +16,17 @@ export async function handlePostRequest(
   req: Request,
   res: Response
 ): Promise<void> {
-  console.log("In handlePostRequest.. ");
   // Check for existing session ID
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
   let transport: StreamableHTTPServerTransport;
 
   if (sessionId && transports[sessionId]) {
-    console.log("In handlePostRequest - sessionId found");
+    logger.info("[handlePostRequest] - sessionId found");
     // Reuse existing transport
     transport = transports[sessionId];
   } else if (!sessionId && isInitializeRequest(req.body)) {
-    console.log(
-      "In handlePostRequest - no sessionId - new initialization request"
+    logger.info(
+      "[handlePostRequest] - no sessionId - new initialization request"
     );
     // New initialization request
     transport = new StreamableHTTPServerTransport({
@@ -41,7 +41,6 @@ export async function handlePostRequest(
       //   process.env.NODE_ENV === "production" ? false : true,
       // allowedHosts: process.env.NODE_ENV === "production" ? [] : ["127.0.0.1"],
     });
-    console.log("In handlePostRequest - transport: ", !!transport);
 
     // Clean up transport when closed
     transport.onclose = () => {
@@ -53,11 +52,13 @@ export async function handlePostRequest(
     // Start the MCP server for remote usage
     await startRemoteServer(transport);
   } else {
-    console.log("In handlePostRequest - invalid request");
+    logger.error("[handlePostRequest] - invalid request");
     // Invalid request
     return;
   }
+
   if (transport) {
+    logger.info("[handlePostRequest] - starting request handling");
     // Handle the request
     await transport.handleRequest(req, res, req.body);
   } else {
@@ -72,20 +73,19 @@ export async function handlePostRequest(
 // // Reusable handler for GET and DELETE requests
 export const handleSessionRequest = async (req: Request, res: Response) => {
   try {
-    console.log("In handleSessionRequest.. ");
     const sessionId = req.headers["mcp-session-id"] as string | undefined;
-    console.log("In handleSessionRequest - sessionId found");
+    logger.info("[handleSessionRequest] - sessionId found");
     if (!sessionId || !transports[sessionId]) {
-      console.log("In handleSessionRequest - Invalid or missing session ID");
+      logger.error("[handleSessionRequest] - Invalid or missing session ID");
       res.status(400).send("Invalid or missing session ID");
       return;
     }
 
     const transport = transports[sessionId];
-    console.log("In handleSessionRequest - transport found");
+    logger.info("[handleSessionRequest] - transport found");
     await transport.handleRequest(req, res);
   } catch (error) {
-    console.error("In handleSessionRequest - error: ", error);
+    logger.error("[handleSessionRequest] - error: ", error);
     res.status(500).json("Internal Server Error");
   }
 };

@@ -3,6 +3,7 @@ import { authorizeTokenMiddleware } from "./middleware";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { handlePostRequest, handleSessionRequest } from "./mcp.controller";
+import { logger } from "../utils/logger";
 
 const router = Router();
 
@@ -21,9 +22,9 @@ router.post(
   "/mcp/me",
   authorizeTokenMiddleware,
   async (req: Request, res: Response) => {
-    console.log(
-      "In mcp route, req.get('authorization')",
-      req.get("authorization")
+    logger.info(
+      "[mcp route] - starting mcp route - getting authorization: " +
+        req.get("authorization")
     );
     const server = new McpServer({ name: "Demo", version: "1.0.0" });
 
@@ -48,7 +49,7 @@ router.post(
       await server.connect(transport);
       await transport.handleRequest(req, res, req.body);
     } catch (error) {
-      console.error("Error handling MCP request:", error);
+      logger.error("[mcp route] - error handling MCP request: ", error);
       res.status(500).json({
         jsonrpc: "2.0",
         error: {

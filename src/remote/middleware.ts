@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import stytch from "stytch";
+import { logger } from "../utils/logger";
 
 export const stytchClient = new stytch.Client({
   project_id: process.env.STYTCH_PROJECT_ID as string,
@@ -12,7 +13,7 @@ export const authorizeTokenMiddleware = async (
   res: Response,
   next: NextFunction
 ) => {
-  console.log("In authorizeTokenMiddleware.....");
+  logger.info("[authorizeTokenMiddleware] - starting authorization");
 
   const wwwAuthValue =
     `Bearer error="Unauthorized", ` +
@@ -26,19 +27,19 @@ export const authorizeTokenMiddleware = async (
       req.headers.authorization && req.headers.authorization.split(" ")[1];
 
     if (!token) {
-      console.log("In authorizeTokenMiddleware, token is not found!!!!!!");
+      logger.error("[authorizeTokenMiddleware] - token is not found!!!!!!");
       res.setHeader("WWW-Authenticate", wwwAuthValue);
       res.status(401).json({ error: "Unauthorized" });
     } else {
       const tokenData = await stytchClient.idp.introspectTokenLocal(
         token as string
       );
-      console.log("In authorizeTokenMiddleware - user is authenticated!:");
+      logger.info("[authorizeTokenMiddleware] - user is authenticated!:");
       (req as any).user = tokenData;
       next();
     }
   } catch (error) {
-    console.error("Error in middleware:", error);
+    logger.error("[authorizeTokenMiddleware] - error: ", error);
     res.setHeader("WWW-Authenticate", wwwAuthValue);
     res.status(401).json({ error: "Unauthorized" });
   }

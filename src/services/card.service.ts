@@ -1,4 +1,9 @@
-import { CardLabel, cardSchema, updateCardSchema } from "../schema/card.schema";
+import {
+  CardLabel,
+  cardSchema,
+  updateCardSchema,
+  commentSchema,
+} from "../schema/card.schema";
 
 const TRELLO_BASE_URL = "https://api.trello.com/1";
 
@@ -175,7 +180,7 @@ export const updateCard = async (
 /**
  * Add a comment to a card
  * @param cardId - The ID of the card to add a comment to
- * @param text - The comment to add to the card
+ * @param text - The comment to add to the card (supports rich text/HTML)
  * @returns {Promise<any>} - A promise that resolves to the added comment
  */
 export const addCommentToCard = async (
@@ -183,8 +188,18 @@ export const addCommentToCard = async (
   text: string
 ): Promise<any> => {
   try {
+    // Validate and sanitize the comment text with rich text support
+    const { text: sanitizedText } = commentSchema.parse({ text });
+
+    // Use URLSearchParams for proper URL encoding
+    const params = new URLSearchParams({
+      text: sanitizedText,
+      key: process.env.TRELLO_API_KEY!,
+      token: process.env.TRELLO_TOKEN!,
+    });
+
     const response = await fetch(
-      `${TRELLO_BASE_URL}/cards/${cardId}/actions/comments?text=${text}&key=${process.env.TRELLO_API_KEY}&token=${process.env.TRELLO_TOKEN}`,
+      `${TRELLO_BASE_URL}/cards/${cardId}/actions/comments?${params.toString()}`,
       {
         method: "POST",
       }
@@ -233,13 +248,26 @@ export const addAttachmentToCard = async (
   }
 };
 
+/**
+ * Move a card to a list
+ * @param cardId - The ID of the card to move
+ * @param listId - The ID of the list to move the card to
+ * @returns {Promise<any>} - A promise that resolves to the moved card
+ */
 export const moveCardToList = async (
   cardId: string,
   listId: string
 ): Promise<any> => {
   try {
+    // Use URLSearchParams for proper URL encoding
+    const params = new URLSearchParams({
+      idList: listId,
+      key: process.env.TRELLO_API_KEY!,
+      token: process.env.TRELLO_TOKEN!,
+    });
+
     const response = await fetch(
-      `${TRELLO_BASE_URL}/cards/${cardId}?idList=${listId}&key=${process.env.TRELLO_API_KEY}&token=${process.env.TRELLO_TOKEN}`,
+      `${TRELLO_BASE_URL}/cards/${cardId}?${params.toString()}`,
       {
         method: "PUT",
       }

@@ -27,11 +27,6 @@ router.get("/logout", (req, res) => {
 router.get(
   "/.well-known/oauth-protected-resource",
   (req: Request, res: Response) => {
-    // return res.json({
-    //   resource: req.get("host"),
-    //   authorization_servers: [process.env.STYTCH_PROJECT_DOMAIN],
-    //   scopes_supported: ["openid", "email", "profile"],
-    // });
     const resource =
       process.env.NODE_ENV === "development"
         ? `http://${req.get("host")}`
@@ -43,7 +38,7 @@ router.get(
       const meta_data = {
         resource: resource,
         authorization_servers: [process.env.STYTCH_PROJECT_DOMAIN],
-        scopes_supported: ["openid", "email", "profile"],
+        scopes_supported: ["openid", "email", "profile", "offline_access"],
       };
 
       res.header("Access-Control-Allow-Origin", "*");
