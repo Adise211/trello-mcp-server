@@ -130,14 +130,24 @@ export const addAttachmentToCardTool = {
     inputSchema: {
       id: z.string().describe("The id of the card to add an attachment to"),
       attachment: z
-        .instanceof(File)
+        .any()
         .describe("The attachment to add to the card")
-        .refine((file) => file.size > 0 && file.type.startsWith("image/"), {
-          message: "Attachment must be a file and an image",
-        }),
+        .refine(
+          (file) => {
+            // Check if it's a File-like object with required properties
+            return (
+              file &&
+              typeof file === "object" &&
+              ("size" in file || "type" in file || "name" in file)
+            );
+          },
+          {
+            message: "Attachment must be a file object",
+          }
+        ),
     },
   },
-  handler: async ({ id, attachment }: { id: string; attachment: File }) => {
+  handler: async ({ id, attachment }: { id: string; attachment: any }) => {
     const response = await cardService.addAttachmentToCard(
       id.trim(),
       attachment
