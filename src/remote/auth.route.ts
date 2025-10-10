@@ -29,7 +29,7 @@ router.get(
   (req: Request, res: Response) => {
     // return res.json({
     //   resource: req.get("host"),
-    //   authorization_servers: [process.env.STYTCH_DOMAIN],
+    //   authorization_servers: [process.env.STYTCH_PROJECT_DOMAIN],
     //   scopes_supported: ["openid", "email", "profile"],
     // });
     const resource =
@@ -42,7 +42,7 @@ router.get(
     try {
       const meta_data = {
         resource: resource,
-        authorization_servers: [process.env.STYTCH_DOMAIN],
+        authorization_servers: [process.env.STYTCH_PROJECT_DOMAIN],
         scopes_supported: ["openid", "email", "profile"],
       };
 

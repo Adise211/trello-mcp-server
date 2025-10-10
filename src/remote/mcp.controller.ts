@@ -18,13 +18,16 @@ export async function handlePostRequest(
   console.log("In handlePostRequest.. ");
   // Check for existing session ID
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
-  console.log("In handlePostRequest - sessionId: ", sessionId);
   let transport: StreamableHTTPServerTransport;
 
   if (sessionId && transports[sessionId]) {
+    console.log("In handlePostRequest - sessionId found");
     // Reuse existing transport
     transport = transports[sessionId];
   } else if (!sessionId && isInitializeRequest(req.body)) {
+    console.log(
+      "In handlePostRequest - no sessionId - new initialization request"
+    );
     // New initialization request
     transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: () => randomUUID(),
@@ -50,10 +53,10 @@ export async function handlePostRequest(
     // Start the MCP server for remote usage
     await startRemoteServer(transport);
   } else {
+    console.log("In handlePostRequest - invalid request");
     // Invalid request
     return;
   }
-  console.log("In handlePostRequest - transportpost: ", transports);
   if (transport) {
     // Handle the request
     await transport.handleRequest(req, res, req.body);
@@ -71,7 +74,7 @@ export const handleSessionRequest = async (req: Request, res: Response) => {
   try {
     console.log("In handleSessionRequest.. ");
     const sessionId = req.headers["mcp-session-id"] as string | undefined;
-    console.log("In handleSessionRequest - sessionId: ", sessionId);
+    console.log("In handleSessionRequest - sessionId found");
     if (!sessionId || !transports[sessionId]) {
       console.log("In handleSessionRequest - Invalid or missing session ID");
       res.status(400).send("Invalid or missing session ID");
@@ -79,7 +82,7 @@ export const handleSessionRequest = async (req: Request, res: Response) => {
     }
 
     const transport = transports[sessionId];
-    console.log("In handleSessionRequest - transport: ", transport);
+    console.log("In handleSessionRequest - transport found");
     await transport.handleRequest(req, res);
   } catch (error) {
     console.error("In handleSessionRequest - error: ", error);
@@ -87,6 +90,7 @@ export const handleSessionRequest = async (req: Request, res: Response) => {
   }
 };
 
+// Error response
 export function createErrorResponse(
   message: string,
   code: number

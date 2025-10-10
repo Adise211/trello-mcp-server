@@ -3,8 +3,8 @@ import stytch from "stytch";
 
 export const stytchClient = new stytch.Client({
   project_id: process.env.STYTCH_PROJECT_ID as string,
-  secret: process.env.STYTCH_SECRET as string,
-  custom_base_url: process.env.STYTCH_DOMAIN as string,
+  secret: process.env.STYTCH_PROJECT_SECRET as string,
+  custom_base_url: process.env.STYTCH_PROJECT_DOMAIN as string,
 });
 
 export const authorizeTokenMiddleware = async (
@@ -33,6 +33,7 @@ export const authorizeTokenMiddleware = async (
       const tokenData = await stytchClient.idp.introspectTokenLocal(
         token as string
       );
+      console.log("In authorizeTokenMiddleware - user is authenticated!:");
       (req as any).user = tokenData;
       next();
     }
