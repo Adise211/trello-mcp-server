@@ -1,3 +1,5 @@
+// TODO: Move to environment variable
+// TODO: Use one URL search params for all requests
 const TRELLO_BASE_URL = "https://api.trello.com/1";
 
 /**
